@@ -1,5 +1,6 @@
 name: Security Scan + ZIP
-on:
+# Solo se ejucuta cuando se hace push en la rama main o pull_request.
+on: 
   push:
     branches: [main]
   pull_request:
@@ -33,7 +34,7 @@ jobs:
         if: steps.snyk.outcome == 'failure'
         run: |
           echo "❌ Vulnerabilities found. ZIP package will NOT be created."
-          #exit 1
+          exit 1 # Devuleve error si tiene vulnerabilidades
 
       # ---- 4. Crear ZIP solo si el código es seguro ----
       - name: Create ZIP (secure build)
