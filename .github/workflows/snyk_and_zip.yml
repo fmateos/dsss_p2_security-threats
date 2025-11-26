@@ -1,0 +1,52 @@
+name: Security Scan + ZIP
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # ---- 1. Ejecutar Snyk (permitimos errores para capturar SARIF) ----
+      - name: Run Snyk Scan
+        id: snyk
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          command: test
+          args: --sarif-file-output=snyk.sarif --all-projects
+
+      # ---- 2. Subir SARIF a GitHub Code Scanning ----
+      - name: Upload SARIF report
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: snyk.sarif
+
+      # ---- 3. Fallar el job si Snyk detectó vulnerabilidades ----
+      - name: Fail if vulnerabilities exist
+        if: steps.snyk.outcome == 'failure'
+        run: |
+          echo "❌ Vulnerabilities found. ZIP package will NOT be created."
+          exit 1
+
+      # ---- 4. Crear ZIP solo si el código es seguro ----
+      - name: Create ZIP (secure build)
+        if: success()
+        uses: ihiroky/archive-action@v1
+        with:
+          root_dir: .
+          file_path: secure_build.zip
+
+      # ---- 5. Subir el ZIP como artefacto descargable ----
+      - name: Upload ZIP artifact
+        if: success()
+        uses: actions/upload-artifact@v3
+        with:
+          name: secure-build
+          path: secure_build.zip
