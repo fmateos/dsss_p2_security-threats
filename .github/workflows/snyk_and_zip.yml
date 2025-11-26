@@ -46,7 +46,7 @@ jobs:
       # ---- 5. Subir el ZIP como artefacto descargable ----
       - name: Upload ZIP artifact
         if: success()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: secure-build
           path: secure_build.zip
